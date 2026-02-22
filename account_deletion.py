@@ -1,0 +1,1 @@
+render_template('account-deletion.html')
