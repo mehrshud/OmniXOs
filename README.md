@@ -9,17 +9,24 @@ The OmniXOs framework is built around a microservices architecture, where each c
 * **API Gateway**: Handles incoming requests and routes them to the appropriate microservice.
 * **Microservices**: Independent components that provide specific functionality, such as authentication, data processing, and storage.
 * **Database**: Stores data and provides access to it through the microservices.
+* **Service Registry**: Manages the registration and discovery of microservices.
+* **Load Balancer**: Distributes traffic across multiple instances of a microservice.
 
 ### Mermaid Diagram: OmniXOs Architecture
 ```mermaid
 graph LR;
     participant Client as "Client"
+    participant LoadBalancer as "Load Balancer"
     participant APIGateway as "API Gateway"
+    participant ServiceRegistry as "Service Registry"
     participant Microservice1 as "Microservice 1"
     participant Microservice2 as "Microservice 2"
     participant Database as "Database"
 
-    Client->>APIGateway: Request
+    Client->>LoadBalancer: Request
+    LoadBalancer->>APIGateway: Route Request
+    APIGateway->>ServiceRegistry: Discover Microservice
+    ServiceRegistry->>APIGateway: Return Microservice Instance
     APIGateway->>Microservice1: Route Request
     APIGateway->>Microservice2: Route Request
     Microservice1->>Database: Store/Retrieve Data
@@ -28,161 +35,127 @@ graph LR;
     Database->>Microservice2: Return Data
     Microservice1->>APIGateway: Response
     Microservice2->>APIGateway: Response
-    APIGateway->>Client: Response
+    APIGateway->>LoadBalancer: Response
+    LoadBalancer->>Client: Response
 ```
 
 ## Key Features
 OmniXOs provides the following key features:
 * **Modular Architecture**: Each component is designed to be independent and scalable.
 * **Microservices**: Provide specific functionality, such as authentication, data processing, and storage.
+* **Service Registry**: Manages the registration and discovery of microservices.
+* **Load Balancing**: Distributes traffic across multiple instances of a microservice.
 * **API Gateway**: Handles incoming requests and routes them to the appropriate microservice.
-* **Database**: Stores data and provides access to it through the microservices.
-* **Security**: OmniXOs includes built-in security features, such as encryption and access control.
+* **Database Abstraction**: Provides a layer of abstraction between the microservices and the database.
 
-## Comparison with Other Frameworks
-The following table compares OmniXOs with other popular Python frameworks:
-
-| Framework | Modular Architecture | Microservices | API Gateway | Database | Security |
-| --- | --- | --- | --- | --- | --- |
-| OmniXOs | | | | | |
-| Django | | | | | |
-| Flask | | | | | |
-| Pyramid | | | | | |
-
-Note: indicates that the feature is available, while indicates that it is not available.
-
-## Getting Started
-To get started with OmniXOs, you will need to install the framework using pip:
-```bash
-pip install omnixos
-```
-Once installed, you can create a new project using the following command:
-```bash
-omnixos create myproject
-```
-This will create a new directory called `myproject` with the basic structure and configuration files for an OmniXOs project.
+### Comparison with Other Frameworks
+| Framework | OmniXOs | Flask | Django |
+| --- | --- | --- | --- |
+| **Architecture** | Microservices | Monolithic | Monolithic |
+| **Scalability** | Highly scalable | Scalable | Scalable |
+| **Modularity** | Highly modular | Modular | Modular |
+| **API Gateway** | Built-in | Third-party | Built-in |
+| **Service Registry** | Built-in | Third-party | Third-party |
+| **Load Balancing** | Built-in | Third-party | Built-in |
 
 ## Code Examples
-The following code example demonstrates how to create a simple API using OmniXOs:
+Here are some code examples to get you started with OmniXOs:
+
+### Creating a Microservice
 ```python
-from omnixos import APIGateway, Microservice
+from omnixos import Microservice
 
-# Create the API Gateway
-api_gateway = APIGateway()
+class MyMicroservice(Microservice):
+    def __init__(self):
+        super().__init__()
+        self.name = "my-microservice"
 
-# Create a new microservice
-microservice = Microservice(name="example")
+    def handle_request(self, request):
+        # Handle the request
+        return {"message": "Hello, World!"}
 
-# Define a route for the microservice
-@microservice.route("/example", methods=["GET"])
-def example():
-    return {"message": "Hello, World!"}
+# Create an instance of the microservice
+microservice = MyMicroservice()
 
-# Add the microservice to the API Gateway
-api_gateway.add_microservice(microservice)
-
-# Run the API Gateway
-api_gateway.run()
+# Start the microservice
+microservice.start()
 ```
-This code defines a simple API with one route that returns a JSON response.
 
-### Example: Authentication Microservice
-The following code example demonstrates how to create an authentication microservice using OmniXOs:
+### Creating an API Gateway
 ```python
-from omnixos import Microservice, Database
+from omnixos import APIGateway
 
-# Create a new microservice
-microservice = Microservice(name="authentication")
+class MyAPIGateway(APIGateway):
+    def __init__(self):
+        super().__init__()
+        self.name = "my-api-gateway"
 
-# Define a route for the microservice
-@microservice.route("/login", methods=["POST"])
-def login():
-    # Get the username and password from the request
-    username = request.json["username"]
-    password = request.json["password"]
+    def handle_request(self, request):
+        # Handle the request
+        return {"message": "Hello, World!"}
 
-    # Check the username and password against the database
-    database = Database()
-    user = database.get_user(username)
+# Create an instance of the API gateway
+api_gateway = MyAPIGateway()
 
-    if user and user.password == password:
-        # Return a JSON response with the user's details
-        return {"user_id": user.id, "username": user.username}
-    else:
-        # Return an error response
-        return {"error": "Invalid username or password"}, 401
-
-# Add the microservice to the API Gateway
-api_gateway.add_microservice(microservice)
+# Start the API gateway
+api_gateway.start()
 ```
-This code defines an authentication microservice that checks the username and password against a database and returns a JSON response with the user's details if the credentials are valid.
 
-### Example: Data Processing Microservice
-The following code example demonstrates how to create a data processing microservice using OmniXOs:
+### Creating a Database
 ```python
-from omnixos import Microservice, Database
+from omnixos import Database
 
-# Create a new microservice
-microservice = Microservice(name="data_processing")
+class MyDatabase(Database):
+    def __init__(self):
+        super().__init__()
+        self.name = "my-database"
 
-# Define a route for the microservice
-@microservice.route("/process_data", methods=["POST"])
-def process_data():
-    # Get the data from the request
-    data = request.json["data"]
+    def store_data(self, data):
+        # Store the data
+        pass
 
-    # Process the data
-    processed_data = process(data)
+    def retrieve_data(self):
+        # Retrieve the data
+        pass
 
-    # Store the processed data in the database
-    database = Database()
-    database.store_data(processed_data)
+# Create an instance of the database
+database = MyDatabase()
 
-    # Return a JSON response with the processed data
-    return {"processed_data": processed_data}
-
-# Add the microservice to the API Gateway
-api_gateway.add_microservice(microservice)
+# Start the database
+database.start()
 ```
-This code defines a data processing microservice that processes the data from the request, stores the processed data in a database, and returns a JSON response with the processed data.
 
-## Security
-OmniXOs includes built-in security features, such as encryption and access control. The framework uses SSL/TLS encryption to secure communication between the client and the server. Additionally, OmniXOs provides access control features, such as authentication and authorization, to restrict access to sensitive data and functionality.
+## Use Cases
+OmniXOs can be used in a variety of scenarios, including:
 
-### Example: Securing a Microservice
-The following code example demonstrates how to secure a microservice using OmniXOs:
-```python
-from omnixos import Microservice, Security
+* **Building a scalable e-commerce platform**: OmniXOs provides a highly scalable and modular architecture that can handle large amounts of traffic and provide a seamless user experience.
+* **Creating a real-time data processing system**: OmniXOs provides a highly scalable and modular architecture that can handle large amounts of data and provide real-time processing and analysis.
+* **Developing a microservices-based application**: OmniXOs provides a highly modular and scalable architecture that can handle multiple microservices and provide a seamless user experience.
 
-# Create a new microservice
-microservice = Microservice(name="example")
+## Best Practices
+Here are some best practices to keep in mind when using OmniXOs:
 
-# Define a route for the microservice
-@microservice.route("/example", methods=["GET"])
-def example():
-    # Check if the user is authenticated
-    if not Security.is_authenticated():
-        return {"error": "Not authenticated"}, 401
+* **Keep each microservice independent and scalable**: Each microservice should be designed to be independent and scalable, and should not rely on other microservices to function.
+* **Use a service registry to manage microservices**: A service registry provides a central location for managing and discovering microservices, and can help to improve scalability and reliability.
+* **Use load balancing to distribute traffic**: Load balancing can help to distribute traffic across multiple instances of a microservice, and can improve scalability and reliability.
+* **Use a database abstraction layer to provide a layer of abstraction between the microservices and the database**: A database abstraction layer can help to provide a layer of abstraction between the microservices and the database, and can improve scalability and reliability.
 
-    # Return a JSON response with the data
-    return {"data": "Hello, World!"}
+## Troubleshooting
+Here are some common issues that you may encounter when using OmniXOs, along with some troubleshooting tips:
 
-# Add the microservice to the API Gateway
-api_gateway.add_microservice(microservice)
-```
-This code defines a microservice that checks if the user is authenticated before returning a JSON response with the data.
-
-## Conclusion
-OmniXOs is a comprehensive Python framework for building scalable applications. With its modular architecture, microservices, API gateway, and database, OmniXOs provides a solid foundation for building complex systems. The framework includes built-in security features, such as encryption and access control, to secure communication and restrict access to sensitive data and functionality. By following the code examples and guidelines in this README, you can get started with building scalable applications using OmniXOs.
-
-## Additional Resources
-For more information on OmniXOs, please visit the following resources:
-* [OmniXOs Documentation](https://docs.omnixos.io/)
-* [OmniXOs GitHub Repository](https://github.com/omnixos/omnixos)
-* [OmniXOs Community Forum](https://forum.omnixos.io/)
+* **Microservice not starting**: Check that the microservice is configured correctly and that the service registry is running.
+* **API gateway not routing requests**: Check that the API gateway is configured correctly and that the microservices are registered with the service registry.
+* **Database not storing or retrieving data**: Check that the database is configured correctly and that the microservices are communicating with the database correctly.
 
 ## Contributing
-OmniXOs is an open-source framework, and we welcome contributions from the community. If you would like to contribute to the framework, please follow the guidelines in the [CONTRIBUTING.md](https://github.com/omnixos/omnixos/blob/master/CONTRIBUTING.md) file.
+OmniXOs is an open-source framework, and we welcome contributions from the community. Here are some ways that you can contribute:
+
+* **Report issues**: If you encounter any issues when using OmniXOs, please report them on our GitHub page.
+* **Submit pull requests**: If you have any patches or improvements that you would like to submit, please submit them as a pull request on our GitHub page.
+* **Join the community**: Join our community on GitHub or Slack to discuss OmniXOs and provide feedback.
 
 ## License
-OmniXOs is licensed under the [MIT License](https://github.com/omnixos/omnixos/blob/master/LICENSE).
+OmniXOs is licensed under the Apache License 2.0. You can find the full text of the license in the LICENSE file.
+
+## Conclusion
+OmniXOs is a powerful and flexible framework for building scalable applications. With its modular architecture and extensive set of features, OmniXOs provides a solid foundation for building complex systems. We hope that this README has provided you with a good understanding of the framework and its capabilities, and that you will consider using OmniXOs for your next project.
